@@ -45,6 +45,10 @@ public class Board extends LinearLayout {
         }
     }
 
+    Square getSquare(char col, int row) {
+        return this.squares[row - 1][col - 'a'];
+    }
+
     @Override
     public void onMeasure(int width, int height) {
         int newSize = (width < height) ? width : height;

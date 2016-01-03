@@ -8,13 +8,13 @@
         android:orientation="vertical"
         android:layout_width="match_parent"
         android:layout_height="match_parent">
-        <include layout="@layout/board_row_a" android:id="@+id/row8"/>
-        <include layout="@layout/board_row_b" android:id="@+id/row7"/>
-        <include layout="@layout/board_row_a" android:id="@+id/row6"/>
-        <include layout="@layout/board_row_b" android:id="@+id/row5"/>
-        <include layout="@layout/board_row_a" android:id="@+id/row4"/>
-        <include layout="@layout/board_row_b" android:id="@+id/row3"/>
-        <include layout="@layout/board_row_a" android:id="@+id/row2"/>
-        <include layout="@layout/board_row_b" android:id="@+id/row1"/>
+        <include layout="@layout/board_row" android:id="@+id/row8"/>
+        <include layout="@layout/board_row" android:id="@+id/row7"/>
+        <include layout="@layout/board_row" android:id="@+id/row6"/>
+        <include layout="@layout/board_row" android:id="@+id/row5"/>
+        <include layout="@layout/board_row" android:id="@+id/row4"/>
+        <include layout="@layout/board_row" android:id="@+id/row3"/>
+        <include layout="@layout/board_row" android:id="@+id/row2"/>
+        <include layout="@layout/board_row" android:id="@+id/row1"/>
     </com.samuel_frank.chessboard.Board>
 </LinearLayout>
