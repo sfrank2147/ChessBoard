@@ -2,6 +2,7 @@ package com.samuel_frank.chessboard;
 
 import android.app.Activity;
 import android.graphics.Color;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
@@ -9,6 +10,7 @@ import android.support.v7.widget.Toolbar;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 
 public class HomeActivity extends Activity {
@@ -65,6 +67,13 @@ public class HomeActivity extends Activity {
         }
     }
 
+    protected void setSquarePiece(char col, int row, int imageResource) {
+        Square sq = getSquareUIElement(col, row);
+        sq.setScaleType(Square.ScaleType.FIT_CENTER);
+        sq.setImageResource(imageResource);
+        sq.setPadding(0, 0, 0, 0);
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -73,9 +82,40 @@ public class HomeActivity extends Activity {
             for (int row = 1; row < 9; row++) {
                 boolean white = ((int) col + row) % 2 == 1;
                 getSquareUIElement(col, row).setBackgroundColor(
-                        white ? Color.parseColor("#FFFFFF") : Color.parseColor("#000000"));
+                        white ? Color.parseColor("#F5DEB3") : Color.parseColor("#8B4513"));
             }
         }
+        //Set initial piece images.
+//        Square e8 = getSquareUIElement('e', 8);
+//        e8.setScaleType(Square.ScaleType.FIT_CENTER);
+//        e8.setImageResource(R.drawable.black_king);
+//        e8.setPadding(0, 0, 0, 0);
+        setSquarePiece('a', 1, R.drawable.white_rook);
+        setSquarePiece('b', 1, R.drawable.white_knight);
+        setSquarePiece('c', 1, R.drawable.white_bishop);
+        setSquarePiece('d', 1, R.drawable.white_queen);
+        setSquarePiece('e', 1, R.drawable.white_king);
+        setSquarePiece('f', 1, R.drawable.white_bishop);
+        setSquarePiece('g', 1, R.drawable.white_knight);
+        setSquarePiece('h', 1, R.drawable.white_rook);
+
+        for (char col = 'a'; col < 'i'; col++) {
+            setSquarePiece(col, 2, R.drawable.white_pawn);
+        }
+
+        setSquarePiece('a', 8, R.drawable.black_rook);
+        setSquarePiece('b', 8, R.drawable.black_knight);
+        setSquarePiece('c', 8, R.drawable.black_bishop);
+        setSquarePiece('d', 8, R.drawable.black_queen);
+        setSquarePiece('e', 8, R.drawable.black_king);
+        setSquarePiece('f', 8, R.drawable.black_bishop);
+        setSquarePiece('g', 8, R.drawable.black_knight);
+        setSquarePiece('h', 8, R.drawable.black_rook);
+
+        for (char col = 'a'; col < 'i'; col++) {
+            setSquarePiece(col, 7, R.drawable.black_pawn);
+        }
+
     }
 
     @Override
