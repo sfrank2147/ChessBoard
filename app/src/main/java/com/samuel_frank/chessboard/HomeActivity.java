@@ -5,18 +5,33 @@ import android.graphics.Color;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
 import android.widget.LinearLayout;
 
-public class GameActivity extends Activity {
+public class HomeActivity extends Activity {
 
     private Board board;
-    private Piece selectedPiece;
+
+    public SquareUIElement getSelectedSquare() {
+        return selectedSquare;
+    }
+
+    public void setSelectedSquare(SquareUIElement selectedSquare) {
+        this.selectedSquare = selectedSquare;
+    }
+
+    private SquareUIElement selectedSquare;
 
     public Board getBoard() {
         if (this.board == null) {
             this.board = new Board();
         }
         return this.board;
+    }
+
+    private boolean isWhiteSquare(SquareUIElement squareUIElement) {
+        Square sq = squareUIElement.getSquare();
+        return ((int) sq.getCol() + sq.getRow()) % 2 == 1;
     }
 
     private SquareUIElement getSquareUIElement(char col, int row) {
@@ -72,6 +87,9 @@ public class GameActivity extends Activity {
     }
 
     private int getImageResource(Piece piece) {
+        if (piece == null) {
+            return android.R.color.transparent;
+        }
         return getImageResource(piece.getColor(), piece.getType());
     }
 
@@ -123,9 +141,7 @@ public class GameActivity extends Activity {
         for (char col = 'a'; col < 'i'; col++) {
             for (int row = 1; row < 9; row++) {
                 Piece piece = board.getSquare(col, row).getPiece();
-                if (piece != null) {
-                    setSquareImage(col, row, getImageResource(piece));
-                }
+                setSquareImage(col, row, getImageResource(piece));
             }
         }
     }
@@ -134,15 +150,17 @@ public class GameActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        setContentView(R.layout.game_activity);
+        setContentView(R.layout.home_activity);
         for (char col = 'a'; col < 'i'; col++) {
             for (int row = 1; row < 9; row++) {
-                boolean white = ((int) col + row) % 2 == 1;
+                SquareUIElement sq = getSquareUIElement(col, row);
+                sq.setSquare(this.getBoard().getSquare(col, row));
+                boolean white = isWhiteSquare(sq);
                 getSquareUIElement(col, row).setBackgroundColor(
                         white ? Color.parseColor("#F5DEB3") : Color.parseColor("#8B4513"));
             }
         }
-        this.selectedPiece = null;
+        this.selectedSquare = null;
         setUIFromBoard(getBoard());
     }
 
@@ -168,7 +186,21 @@ public class GameActivity extends Activity {
         return super.onOptionsItemSelected(item);
     }
 
-    public void squareClicked(SquareUIElement square) {
-        square.setBackgroundColor(Color.parseColor("#00FF00"));
+    public void squareClicked(View view) {
+        SquareUIElement squareUIElement = (SquareUIElement) view;
+        SquareUIElement previousSelectedSquare = getSelectedSquare();
+        if (previousSelectedSquare == null) {
+            squareUIElement.setBackgroundColor(Color.parseColor("#00FF00"));
+            setSelectedSquare(squareUIElement);
+        } else {
+            previousSelectedSquare.setBackgroundColor(
+                    isWhiteSquare(previousSelectedSquare)
+                            ? Color.parseColor("#F5DEB3")
+                            : Color.parseColor("#8B4513")
+            );
+            this.board.move(previousSelectedSquare.getSquare(), squareUIElement.getSquare());
+            setUIFromBoard(this.board);
+            setSelectedSquare(null);
+        }
     }
 }

@@ -3,6 +3,31 @@ package com.samuel_frank.chessboard;
 /**
  * Created by smf2147 on 1/2/16.
  */
-public abstract class Piece {
-    public Piece() {}
+public class Piece {
+    public Piece(PlayerColor color, Type type) {
+        this.setColor(color);
+        this.setType(type);
+    }
+
+    public enum Type {ROOK, KNIGHT, BISHOP, QUEEN, KING, PAWN};
+
+    public PlayerColor getColor() {
+        return color;
+    }
+
+    public void setColor(PlayerColor color) {
+        this.color = color;
+    }
+
+    private PlayerColor color;
+
+    public Type getType() {
+        return type;
+    }
+
+    public void setType(Type type) {
+        this.type = type;
+    }
+
+    private Type type;
 }

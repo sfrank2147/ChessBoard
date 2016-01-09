@@ -9,41 +9,25 @@ import android.widget.ImageButton;
  * Created by smf2147 on 1/2/16.
  */
 public class SquareUIElement extends ImageButton {
-    private static final String TAG = "Square";
+    private static final String TAG = "SquareUIElement";
+
+    public Square getSquare() {
+        return square;
+    }
+
+    public void setSquare(Square square) {
+        this.square = square;
+    }
+
+    private Square square;
 
     public SquareUIElement(Context context) {
         super(context);
-        this.initializePrivateMembers();
-        Log.d(TAG, "Initialized!");
+        this.square = null;
     }
 
     public SquareUIElement(Context context, AttributeSet attrs) {
         super(context, attrs);
-        this.initializePrivateMembers();
-        Log.d(TAG, "Initialized!");
+        this.square = null;
     }
-
-    public Piece getPiece() {
-        return piece;
-    }
-
-    public void setPiece(Piece piece) {
-        this.piece = piece;
-    }
-
-    public BoardLayout getBoard() {
-        return board;
-    }
-
-    public void setBoard(BoardLayout board) {
-        this.board = board;
-    }
-
-    private void initializePrivateMembers() {
-        this.piece = null;
-        this.board = null;
-    }
-
-    private Piece piece;
-    private BoardLayout board;
 }
