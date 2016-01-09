@@ -2,22 +2,26 @@ package com.samuel_frank.chessboard;
 
 import android.app.Activity;
 import android.graphics.Color;
-import android.graphics.drawable.Drawable;
 import android.os.Bundle;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
-import android.support.v7.widget.Toolbar;
-import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.widget.ImageView;
 import android.widget.LinearLayout;
 
-public class HomeActivity extends Activity {
+public class GameActivity extends Activity {
 
-    private Square getSquareUIElement(char col, int row) {
+    private Board board;
+    private Piece selectedPiece;
+
+    public Board getBoard() {
+        if (this.board == null) {
+            this.board = new Board();
+        }
+        return this.board;
+    }
+
+    private SquareUIElement getSquareUIElement(char col, int row) {
         LinearLayout r;
-        Square sq;
+        SquareUIElement sq;
         switch (row) {
             case 1:
                 r = (LinearLayout) findViewById(R.id.row1);
@@ -48,36 +52,89 @@ public class HomeActivity extends Activity {
 
         switch (col) {
             case 'a':
-                return (Square) r.findViewById(R.id.cola);
+                return (SquareUIElement) r.findViewById(R.id.cola);
             case 'b':
-                return (Square) r.findViewById(R.id.colb);
+                return (SquareUIElement) r.findViewById(R.id.colb);
             case 'c':
-                return (Square) r.findViewById(R.id.colc);
+                return (SquareUIElement) r.findViewById(R.id.colc);
             case 'd':
-                return (Square) r.findViewById(R.id.cold);
+                return (SquareUIElement) r.findViewById(R.id.cold);
             case 'e':
-                return (Square) r.findViewById(R.id.cole);
+                return (SquareUIElement) r.findViewById(R.id.cole);
             case 'f':
-                return (Square) r.findViewById(R.id.colf);
+                return (SquareUIElement) r.findViewById(R.id.colf);
             case 'g':
-                return (Square) r.findViewById(R.id.colg);
+                return (SquareUIElement) r.findViewById(R.id.colg);
             case 'h':
             default:
-                return (Square) r.findViewById(R.id.colh);
+                return (SquareUIElement) r.findViewById(R.id.colh);
         }
     }
 
-    protected void setSquarePiece(char col, int row, int imageResource) {
-        Square sq = getSquareUIElement(col, row);
-        sq.setScaleType(Square.ScaleType.FIT_CENTER);
+    private int getImageResource(Piece piece) {
+        return getImageResource(piece.getColor(), piece.getType());
+    }
+
+    private int getImageResource(PlayerColor color, Piece.Type type) {
+        if (color == PlayerColor.BLACK) {
+            switch(type) {
+                case ROOK:
+                    return R.drawable.black_rook;
+                case KNIGHT:
+                    return R.drawable.black_knight;
+                case BISHOP:
+                    return R.drawable.black_bishop;
+                case KING:
+                    return R.drawable.black_king;
+                case QUEEN:
+                    return R.drawable.black_queen;
+                case PAWN:
+                    return R.drawable.black_pawn;
+            }
+
+        } else {
+            switch(type) {
+                case ROOK:
+                    return R.drawable.white_rook;
+                case KNIGHT:
+                    return R.drawable.white_knight;
+                case BISHOP:
+                    return R.drawable.white_bishop;
+                case KING:
+                    return R.drawable.white_king;
+                case QUEEN:
+                    return R.drawable.white_queen;
+                case PAWN:
+                    return R.drawable.white_pawn;
+            }
+        }
+        // Should never reach here.
+        return 0;
+    }
+
+    private void setSquareImage(char col, int row, int imageResource) {
+        SquareUIElement sq = getSquareUIElement(col, row);
+        sq.setScaleType(SquareUIElement.ScaleType.FIT_CENTER);
         sq.setImageResource(imageResource);
         sq.setPadding(0, 0, 0, 0);
+    }
+
+    private void setUIFromBoard(Board board) {
+        for (char col = 'a'; col < 'i'; col++) {
+            for (int row = 1; row < 9; row++) {
+                Piece piece = board.getSquare(col, row).getPiece();
+                if (piece != null) {
+                    setSquareImage(col, row, getImageResource(piece));
+                }
+            }
+        }
     }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_home);
+
+        setContentView(R.layout.game_activity);
         for (char col = 'a'; col < 'i'; col++) {
             for (int row = 1; row < 9; row++) {
                 boolean white = ((int) col + row) % 2 == 1;
@@ -85,37 +142,8 @@ public class HomeActivity extends Activity {
                         white ? Color.parseColor("#F5DEB3") : Color.parseColor("#8B4513"));
             }
         }
-        //Set initial piece images.
-//        Square e8 = getSquareUIElement('e', 8);
-//        e8.setScaleType(Square.ScaleType.FIT_CENTER);
-//        e8.setImageResource(R.drawable.black_king);
-//        e8.setPadding(0, 0, 0, 0);
-        setSquarePiece('a', 1, R.drawable.white_rook);
-        setSquarePiece('b', 1, R.drawable.white_knight);
-        setSquarePiece('c', 1, R.drawable.white_bishop);
-        setSquarePiece('d', 1, R.drawable.white_queen);
-        setSquarePiece('e', 1, R.drawable.white_king);
-        setSquarePiece('f', 1, R.drawable.white_bishop);
-        setSquarePiece('g', 1, R.drawable.white_knight);
-        setSquarePiece('h', 1, R.drawable.white_rook);
-
-        for (char col = 'a'; col < 'i'; col++) {
-            setSquarePiece(col, 2, R.drawable.white_pawn);
-        }
-
-        setSquarePiece('a', 8, R.drawable.black_rook);
-        setSquarePiece('b', 8, R.drawable.black_knight);
-        setSquarePiece('c', 8, R.drawable.black_bishop);
-        setSquarePiece('d', 8, R.drawable.black_queen);
-        setSquarePiece('e', 8, R.drawable.black_king);
-        setSquarePiece('f', 8, R.drawable.black_bishop);
-        setSquarePiece('g', 8, R.drawable.black_knight);
-        setSquarePiece('h', 8, R.drawable.black_rook);
-
-        for (char col = 'a'; col < 'i'; col++) {
-            setSquarePiece(col, 7, R.drawable.black_pawn);
-        }
-
+        this.selectedPiece = null;
+        setUIFromBoard(getBoard());
     }
 
     @Override
@@ -138,5 +166,9 @@ public class HomeActivity extends Activity {
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    public void squareClicked(SquareUIElement square) {
+        square.setBackgroundColor(Color.parseColor("#00FF00"));
     }
 }

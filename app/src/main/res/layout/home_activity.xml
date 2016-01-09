@@ -4,7 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <com.samuel_frank.chessboard.Board
+    <com.samuel_frank.chessboard.BoardLayout
         android:orientation="vertical"
         android:layout_width="match_parent"
         android:layout_height="match_parent">
@@ -16,5 +16,5 @@
         <include layout="@layout/board_row" android:id="@+id/row3"/>
         <include layout="@layout/board_row" android:id="@+id/row2"/>
         <include layout="@layout/board_row" android:id="@+id/row1"/>
-    </com.samuel_frank.chessboard.Board>
+    </com.samuel_frank.chessboard.BoardLayout>
 </LinearLayout>
