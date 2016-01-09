@@ -190,16 +190,23 @@ public class HomeActivity extends Activity {
         SquareUIElement squareUIElement = (SquareUIElement) view;
         SquareUIElement previousSelectedSquare = getSelectedSquare();
         if (previousSelectedSquare == null) {
-            squareUIElement.setBackgroundColor(Color.parseColor("#00FF00"));
-            setSelectedSquare(squareUIElement);
+            Piece selectedPiece = squareUIElement.getSquare().getPiece();
+            if (selectedPiece == null ||
+                    selectedPiece.getColor() != this.board.getCurrentPlayer()) {
+                return;
+            } else {
+                squareUIElement.setBackgroundColor(Color.parseColor("#00FF00"));
+                setSelectedSquare(squareUIElement);
+            }
         } else {
             previousSelectedSquare.setBackgroundColor(
                     isWhiteSquare(previousSelectedSquare)
                             ? Color.parseColor("#F5DEB3")
                             : Color.parseColor("#8B4513")
             );
-            this.board.move(previousSelectedSquare.getSquare(), squareUIElement.getSquare());
-            setUIFromBoard(this.board);
+            if (this.board.move(previousSelectedSquare.getSquare(), squareUIElement.getSquare())) {
+                setUIFromBoard(this.board);
+            }
             setSelectedSquare(null);
         }
     }

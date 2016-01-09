@@ -4,7 +4,7 @@ package com.samuel_frank.chessboard;
  * Created by smf2147 on 1/5/16.
  */
 public class Square {
-    public Square(char row, int col) {
+    public Square(char col, int row) {
         setRow(row);
         setCol(col);
     }
@@ -33,22 +33,22 @@ public class Square {
     private Piece piece;
     private Board board;
 
-    public char getRow() {
+    public int getRow() {
         return row;
     }
 
-    public void setRow(char row) {
+    public void setRow(int row) {
         this.row = row;
     }
 
-    public int getCol() {
+    public char getCol() {
         return col;
     }
 
-    public void setCol(int col) {
+    public void setCol(char col) {
         this.col = col;
     }
 
-    private char row;
-    private int col;
+    private int row;
+    private char col;
 }
