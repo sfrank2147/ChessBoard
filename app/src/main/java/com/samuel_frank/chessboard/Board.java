@@ -2,6 +2,7 @@ package com.samuel_frank.chessboard;
 
 import android.content.Context;
 
+import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -17,6 +18,23 @@ public class Board {
 
         char col;
         int row;
+
+        @Override
+        public boolean equals(Object other) {
+            if (other == null) {
+                return false;
+            }
+            if (getClass() != other.getClass()) {
+                return false;
+            }
+            Coordinates otherCoords = (Coordinates) other;
+            return this.col == otherCoords.col && this.row == otherCoords.row;
+        }
+
+        @Override
+        public int hashCode() {
+            return 8*row + (int) (col - 'a');
+        }
     }
 
     private Coordinates getCoordinates(Square sq) {
@@ -100,78 +118,145 @@ public class Board {
     }
 
     private boolean isValidMoveForQueen(Square origin, Square destination) {
-        Coordinates originCoords = getCoordinates(origin);
         Coordinates destCoords = getCoordinates(destination);
-        // If origin and destination in the same row, make sure no pieces in between.
-        if (sameRow(originCoords, destCoords)) {
-            return rowClear(originCoords, destCoords);
-        }
-        if (sameCol(originCoords, destCoords)) {
-            return colClear(originCoords, destCoords);
-        }
-        if (sameDiag(originCoords, destCoords)) {
-            return diagClear(originCoords, destCoords);
-        }
-        return false;
+        return getRowAndColumnCoordinates(origin).contains(destCoords) ||
+                getDiagonalCoordinates(origin).contains(destCoords);
     }
 
-    private boolean sameRow(Coordinates a, Coordinates b) {
-        return a.row == b.row;
-    }
-
-    private boolean rowClear(Coordinates a, Coordinates b) {
-        int row = a.row;  // Same for both
-        char leftCol = a.col < b.col ? a.col : b.col;
-        char rightCol = a.col < b.col ? b.col : a.col;
-        for (char col = (char) (leftCol + 1); col < rightCol; col++) {
-            if (getSquare(col, row).getPiece() != null) {
-                return false;
+    private HashSet<Coordinates> getRowAndColumnCoordinates(Square origin) {
+        Coordinates startCoords = getCoordinates(origin);
+        HashSet<Coordinates> coordSet = new HashSet<Coordinates>();
+        // Need to be able to compare color to the moving piece
+        if (origin.getPiece() == null) {
+            return coordSet;
+        }
+        // Get coords on the same row to the right.
+        for (char col = (char) (startCoords.col + 1); col < 'i'; col++) {
+            Piece piece  = getSquare(col, startCoords.row).getPiece();
+            if (piece == null) {
+                coordSet.add(new Coordinates(col, startCoords.row));
+            } else {
+                if (piece.getColor() != origin.getPiece().getColor()) {
+                    coordSet.add(new Coordinates(col, startCoords.row));
+                }
+                break;
             }
         }
-        return true;
-    }
-
-    private boolean sameCol(Coordinates a, Coordinates b) {
-        return a.col == b.col;
-    }
-
-    private boolean colClear(Coordinates a, Coordinates b) {
-        char col = a.col;
-        int bottomRow = a.row < b.row ? a.row : b.row;
-        int topRow = a.row < b.row ? b.row : a.row;
-        for (int row = bottomRow + 1; row < topRow; row++) {
-            if (getSquare(col, row).getPiece() != null) {
-                return false;
+        // Get coords on the same row to the left.
+        for (char col = (char) (startCoords.col - 1); col > (char) ('a' - 1); col--) {
+            Piece piece = getSquare(col, startCoords.row).getPiece();
+            if (piece == null) {
+                coordSet.add(new Coordinates(col, startCoords.row));
+            } else {
+                if (piece.getColor() != origin.getPiece().getColor()) {
+                    coordSet.add(new Coordinates(col, startCoords.row));
+                }
+                break;
             }
         }
-        return true;
-    }
-
-    private boolean sameDiag(Coordinates a, Coordinates b) {
-        return Math.abs(a.row - b.row) == Math.abs(a.col - b.col);
-    }
-
-    private boolean diagClear(Coordinates a, Coordinates b) {
-        // Diagonal could go up-right or up-down, WLOG
-        // Pick the left point, determine if it goes up or down.
-        Coordinates leftCoordinates = a.col < b.col ? a : b;
-        Coordinates rightCoordinates = a.col < b.col ? b : a;
-        boolean upRight = leftCoordinates.row < rightCoordinates.row;
-        char startingCol = leftCoordinates.col;
-        int rowIncrement = upRight ? 1 : -1;
-        Coordinates coords = leftCoordinates;
-        // Don't start with the initial point.
-        coords.col++;
-        coords.row += rowIncrement;
-        while (coords.col < rightCoordinates.col) {
-            if (getSquare(coords.col, coords.row).getPiece() != null) {
-                return false;
+        // Get coords on the same column above.
+        for (int row = startCoords.row + 1; row < 9; row++) {
+            Piece piece  = getSquare(startCoords.col, row).getPiece();
+            if (piece == null) {
+                coordSet.add(new Coordinates(startCoords.col, row));
+            } else {
+                if (piece.getColor() != origin.getPiece().getColor()) {
+                    coordSet.add(new Coordinates(startCoords.col, row));
+                }
+                break;
             }
-            coords.col++;
-            coords.row += rowIncrement;
         }
-        return true;
+        // Get coords on the same column below.
+        for (int row = startCoords.row - 1; row > 0; row--) {
+            Piece piece  = getSquare(startCoords.col, row).getPiece();
+            if (piece == null) {
+                coordSet.add(new Coordinates(startCoords.col, row));
+            } else {
+                if (piece.getColor() != origin.getPiece().getColor()) {
+                    coordSet.add(new Coordinates(startCoords.col, row));
+                }
+                break;
+            }
+        }
+        return coordSet;
     }
+
+    private HashSet<Coordinates> getDiagonalCoordinates(Square origin) {
+        Coordinates startCoords = getCoordinates(origin);
+        HashSet<Coordinates> coordSet = new HashSet<Coordinates>();
+        // Need to be able to compare color to the moving piece
+        if (origin.getPiece() == null) {
+            return coordSet;
+        }
+        // Diagonal to the upper right.
+        for (int offset = 1;
+             (char) (startCoords.col + offset) < 'i' && startCoords.row + offset < 9;
+                offset++) {
+            char col = (char) (startCoords.col + offset);
+            int row = startCoords.row + offset;
+            Piece piece = getSquare(col, row).getPiece();
+            if (piece == null) {
+                coordSet.add(new Coordinates(col, row));
+            } else {
+                if (piece.getColor() != origin.getPiece().getColor()) {
+                    coordSet.add(new Coordinates(col, row));
+                }
+                break;
+            }
+        }
+        // Diagonal to the lower left.
+        for (int offset = 1;
+             (char) (startCoords.col - offset) > (char) ('a' - 1) && startCoords.row - offset > 0;
+             offset++) {
+            char col = (char) (startCoords.col - offset);
+            int row = startCoords.row - offset;
+            Piece piece = getSquare(col, row).getPiece();
+            if (piece == null) {
+                coordSet.add(new Coordinates(col, row));
+            } else {
+                if (piece.getColor() != origin.getPiece().getColor()) {
+                    coordSet.add(new Coordinates(col, row));
+                }
+                break;
+            }
+        }
+        // Diagonal to the upper left.
+        for (int offset = 1;
+             (char) (startCoords.col - offset) > (char) ('a' - 1) && startCoords.row + offset < 9;
+             offset++) {
+            char col = (char) (startCoords.col - offset);
+            int row = startCoords.row + offset;
+            Piece piece = getSquare(col, row).getPiece();
+            if (piece == null) {
+                coordSet.add(new Coordinates(col, row));
+            } else {
+                if (piece.getColor() != origin.getPiece().getColor()) {
+                    coordSet.add(new Coordinates(col, row));
+                }
+                break;
+            }
+        }
+        // Diagonal to the lower right.
+        for (int offset = 1;
+             (char) (startCoords.col + offset) < 'i' && startCoords.row - offset > 0;
+             offset++) {
+            char col = (char) (startCoords.col + offset);
+            int row = startCoords.row - offset;
+            Piece piece = getSquare(col, row).getPiece();
+            if (piece == null) {
+                coordSet.add(new Coordinates(col, row));
+            } else {
+                if (piece.getColor() != origin.getPiece().getColor()) {
+                    coordSet.add(new Coordinates(col, row));
+                }
+                break;
+            }
+        }
+
+
+        return coordSet;
+    }
+
 
     private boolean isValidMove(Square origin, Square destination) {
         Piece piece = origin.getPiece();
