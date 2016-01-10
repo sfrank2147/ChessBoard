@@ -202,7 +202,11 @@ public class Board {
 
     public boolean move(Square origin, Square destination) {
         if (origin.getPiece() == null || origin.getPiece().getColor() != this.getCurrentPlayer()) {
-            return false;
+            return false;  // Have to move your own piece.
+        }
+        if (destination.getPiece() != null &&
+                destination.getPiece().getColor() == this.getCurrentPlayer()) {
+            return false;  // Can't take your own piece.
         }
         if (isValidMove(origin, destination)) {
             destination.setPiece(origin.getPiece());
