@@ -2,6 +2,7 @@ package com.samuel_frank.chessboard;
 
 import android.content.Context;
 
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -121,6 +122,100 @@ public class Board {
         Coordinates destCoords = getCoordinates(destination);
         return getRowAndColumnCoordinates(origin).contains(destCoords) ||
                 getDiagonalCoordinates(origin).contains(destCoords);
+    }
+
+    private boolean isValidMoveForRook(Square origin, Square destination) {
+        return getRowAndColumnCoordinates(origin).contains(getCoordinates(destination));
+    }
+
+    private boolean isValidMoveForBishop(Square origin, Square destination) {
+        return getDiagonalCoordinates(origin).contains(getCoordinates(destination));
+    }
+
+    private boolean isValidMoveForKnight(Square origin, Square destination) {
+        return getKnightCoordinates(origin).contains(getCoordinates(destination));
+    }
+
+    private boolean isValidMoveForKing(Square origin, Square destination) {
+        return isValidMoveForQueen(origin, destination) &&
+                Math.abs((int) (origin.getCol() - destination.getCol())) <= 1 &&
+                Math.abs(origin.getRow() - destination.getRow()) <= 1;
+    }
+
+    private boolean isValidMoveForPawn(Square origin, Square destination) {
+        return getPawnCoordinates(origin).contains(getCoordinates(destination));
+    }
+
+    private HashSet<Coordinates> getPawnCoordinates(Square origin) {
+        HashSet<Coordinates> coords = new HashSet<Coordinates>();
+        if (origin.getPiece() == null) {
+            return coords;
+        }
+        // Pawns should never be in rows 1 or 8.
+        if (origin.getRow() == 1 || origin.getRow() == 8) {
+            return coords;
+        }
+        int direction = origin.getPiece().getColor() == PlayerColor.WHITE ? 1 : -1;
+        Coordinates startCoords = getCoordinates(origin);
+        // First, check if the pawn can go one or two steps forward.
+        Coordinates oneStepForward = new Coordinates(startCoords.col, startCoords.row + direction);
+        if (oneStepForward.row >= 1 &&
+                oneStepForward.row <= 8 &&
+                getSquare(oneStepForward.col, oneStepForward.row).getPiece() == null) {
+            coords.add(oneStepForward);
+            // If the pawn can go one step forward, can it go two steps forward?
+            Coordinates twoStepsForward = new Coordinates(
+                    startCoords.col, startCoords.row + 2 * direction);
+            if (twoStepsForward.row >= 1 &&
+                    twoStepsForward.row <= 8 &&
+                    getSquare(twoStepsForward.col, twoStepsForward.row).getPiece() == null &&
+                    // The pawn can only move two steps forward if it's in its starting position.
+                    (startCoords.row ==
+                            (origin.getPiece().getColor() == PlayerColor.WHITE ? 2 : 7))) {
+                coords.add(twoStepsForward);
+            }
+        }
+        // Can the pawn attack diagonally?
+        if (startCoords.col != 'a') {
+            Coordinates leftDiagonalCoordinates = new Coordinates(
+                    (char) (startCoords.col - 1), startCoords.row + direction);
+            Piece attackedPiece =
+                    getSquare(leftDiagonalCoordinates.col, leftDiagonalCoordinates.row).getPiece();
+            if (attackedPiece != null && attackedPiece.getColor() != origin.getPiece().getColor()) {
+                coords.add(leftDiagonalCoordinates);
+            }
+        }
+        if (startCoords.col != 'h') {
+            Coordinates rightDiagonalCoordinates = new Coordinates(
+                    (char) (startCoords.col + 1), startCoords.row + direction);
+            Piece attackedPiece = getSquare(
+                    rightDiagonalCoordinates.col, rightDiagonalCoordinates.row).getPiece();
+            if (attackedPiece != null && attackedPiece.getColor() != origin.getPiece().getColor()) {
+                coords.add(rightDiagonalCoordinates);
+            }
+        }
+        return coords;
+    }
+
+    private HashSet<Coordinates> getKnightCoordinates(Square origin) {
+        Coordinates startCoords = getCoordinates(origin);
+        HashSet<Coordinates> coordSet = new HashSet<Coordinates>();
+        Coordinates[] newCoords = {
+                new Coordinates((char) (startCoords.col + 2), startCoords.row + 1),
+                new Coordinates((char) (startCoords.col + 2), startCoords.row - 1),
+                new Coordinates((char) (startCoords.col - 2), startCoords.row + 1),
+                new Coordinates((char) (startCoords.col - 2), startCoords.row - 1),
+                new Coordinates((char) (startCoords.col + 1), startCoords.row + 2),
+                new Coordinates((char) (startCoords.col + 1), startCoords.row - 2),
+                new Coordinates((char) (startCoords.col - 1), startCoords.row + 2),
+                new Coordinates((char) (startCoords.col - 1), startCoords.row - 2),
+        };
+        for (Coordinates coords : newCoords) {
+            if (coords.col >= 'a' && coords.col < 'h' && coords.row >= 1 && coords.row <= 8) {
+                coordSet.add(coords);
+            }
+        }
+        return coordSet;
     }
 
     private HashSet<Coordinates> getRowAndColumnCoordinates(Square origin) {
@@ -273,12 +368,32 @@ public class Board {
                 || destCoords.row < 1 || destCoords.row > 8) {
             return false;
         }
+        boolean isValidMove = false;
         switch (piece.getType()) {
             case QUEEN:
-                return isValidMoveForQueen(origin, destination);
+                isValidMove = isValidMoveForQueen(origin, destination);
+                break;
+            case BISHOP:
+                isValidMove = isValidMoveForBishop(origin, destination);
+                break;
+            case ROOK:
+                isValidMove = isValidMoveForRook(origin, destination);
+                break;
+            case KNIGHT:
+                isValidMove = isValidMoveForKnight(origin, destination);
+                break;
+            case KING:
+                isValidMove = isValidMoveForKing(origin, destination);
+                break;
+            case PAWN:
+                isValidMove = isValidMoveForPawn(origin, destination);
+                break;
             default:
-                return true;
+                isValidMove = true;
+                break;
         }
+
+        return isValidMove;
     }
 
     Square getSquare(char col, int row) {
