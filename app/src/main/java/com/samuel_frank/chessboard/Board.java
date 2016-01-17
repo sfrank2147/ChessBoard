@@ -47,6 +47,21 @@ public class Board {
         this.currentPlayer = PlayerColor.WHITE;
     }
 
+    // Copy constructor.
+    public Board(Board otherBoard) {
+        this.currentPlayer = otherBoard.currentPlayer;
+        this.squares = new Square[8][8];
+        for (char col = 'a'; col < 'i'; col++) {
+            for (int row = 1; row < 8; row++) {
+                Piece otherPiece = otherBoard.getSquare(col, row).getPiece();
+                if (otherPiece != null) {
+                    Piece thisPiece = new Piece(otherPiece);
+                    getSquare(col, row).setPiece(thisPiece);
+                }
+            }
+        }
+    }
+
     public PlayerColor getCurrentPlayer() {
         return currentPlayer;
     }
@@ -58,16 +73,6 @@ public class Board {
     private PlayerColor currentPlayer;
 
     private static final String TAG = "Board";
-
-    public int getSize() {
-        return size;
-    }
-
-    public void setSize(int size) {
-        this.size = size;
-    }
-
-    private int size;
 
     private Square[][] squares;
 

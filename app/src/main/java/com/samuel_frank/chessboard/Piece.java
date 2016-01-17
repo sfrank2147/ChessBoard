@@ -9,6 +9,12 @@ public class Piece {
         this.setType(type);
     }
 
+    // Copy constructor.
+    public Piece(Piece otherPiece) {
+        this.setColor(otherPiece.getColor());
+        this.setType(otherPiece.getType());
+    }
+
     public enum Type {ROOK, KNIGHT, BISHOP, QUEEN, KING, PAWN};
 
     public PlayerColor getColor() {
