@@ -5,6 +5,7 @@ import android.content.Context;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.Stack;
 
 /**
  * Created by smf2147 on 1/5/16.
@@ -38,6 +39,81 @@ public class Board {
         }
     }
 
+    private class Move {
+        public Move(Square origin, Square destination, boolean isCastle, boolean isEnPassant) {
+            if (origin.getPiece() != null) {
+                setMovingPiece(new Piece(origin.getPiece()));
+            } else {
+                setMovingPiece(null);
+            }
+
+            if (destination.getPiece() != null) {
+                setTakenPiece(new Piece(destination.getPiece()));
+            } else {
+                setTakenPiece(null);
+            }
+            setStartCoordinates(getCoordinates(origin));
+            setEndCoordinates(getCoordinates(destination));
+            setIsCastle(isCastle);
+            setIsEnPassant(isEnPassant);
+        }
+
+        public Piece getMovingPiece() {
+            return movingPiece;
+        }
+
+        public void setMovingPiece(Piece movingPiece) {
+            this.movingPiece = movingPiece;
+        }
+
+        public Piece getTakenPiece() {
+            return takenPiece;
+        }
+
+        public void setTakenPiece(Piece takenPiece) {
+            this.takenPiece = takenPiece;
+        }
+
+        public Coordinates getStartCoordinates() {
+            return startCoordinates;
+        }
+
+        public void setStartCoordinates(Coordinates startCoordinates) {
+            this.startCoordinates = startCoordinates;
+        }
+
+        public Coordinates getEndCoordinates() {
+            return endCoordinates;
+        }
+
+        public void setEndCoordinates(Coordinates endCoordinates) {
+            this.endCoordinates = endCoordinates;
+        }
+
+        public boolean isCastle() {
+            return isCastle;
+        }
+
+        public void setIsCastle(boolean isCastle) {
+            this.isCastle = isCastle;
+        }
+
+        public boolean isEnPassant() {
+            return isEnPassant;
+        }
+
+        public void setIsEnPassant(boolean isEnPassant) {
+            this.isEnPassant = isEnPassant;
+        }
+
+        Piece movingPiece;
+        Piece takenPiece;
+        Coordinates startCoordinates;
+        Coordinates endCoordinates;
+        boolean isCastle;
+        boolean isEnPassant;
+    }
+
     private Coordinates getCoordinates(Square sq) {
         return new Coordinates(sq.getCol(), sq.getRow());
     }
@@ -45,18 +121,22 @@ public class Board {
     public Board() {
         initializeSquares();
         this.currentPlayer = PlayerColor.WHITE;
+        this.moveStack = new Stack<>();
     }
 
     // Copy constructor.
     public Board(Board otherBoard) {
+        this();
+        // Copy the current player and pieces.
         this.currentPlayer = otherBoard.currentPlayer;
-        this.squares = new Square[8][8];
         for (char col = 'a'; col < 'i'; col++) {
             for (int row = 1; row < 8; row++) {
                 Piece otherPiece = otherBoard.getSquare(col, row).getPiece();
                 if (otherPiece != null) {
                     Piece thisPiece = new Piece(otherPiece);
                     getSquare(col, row).setPiece(thisPiece);
+                } else {
+                    getSquare(col, row).setPiece(null);
                 }
             }
         }
@@ -75,6 +155,23 @@ public class Board {
     private static final String TAG = "Board";
 
     private Square[][] squares;
+
+    private Stack<Move> moveStack;
+
+    public void recordMove(Move move) {
+        moveStack.push(move);
+    }
+
+    public Move peekLastMove() {
+        if (moveStack.size() == 0) {
+            return null;
+        }
+        return moveStack.peek();
+    }
+
+    public Move popMove() {
+        return moveStack.pop();
+    }
 
     private void initializeSquares() {
         this.squares = new Square[8][8];
@@ -123,32 +220,27 @@ public class Board {
 
     }
 
-    private boolean isValidMoveForQueen(Square origin, Square destination) {
-        Coordinates destCoords = getCoordinates(destination);
-        return getRowAndColumnCoordinates(origin).contains(destCoords) ||
-                getDiagonalCoordinates(origin).contains(destCoords);
-    }
-
-    private boolean isValidMoveForRook(Square origin, Square destination) {
-        return getRowAndColumnCoordinates(origin).contains(getCoordinates(destination));
-    }
-
-    private boolean isValidMoveForBishop(Square origin, Square destination) {
-        return getDiagonalCoordinates(origin).contains(getCoordinates(destination));
-    }
-
-    private boolean isValidMoveForKnight(Square origin, Square destination) {
-        return getKnightCoordinates(origin).contains(getCoordinates(destination));
-    }
-
-    private boolean isValidMoveForKing(Square origin, Square destination) {
-        return isValidMoveForQueen(origin, destination) &&
-                Math.abs((int) (origin.getCol() - destination.getCol())) <= 1 &&
-                Math.abs(origin.getRow() - destination.getRow()) <= 1;
-    }
-
-    private boolean isValidMoveForPawn(Square origin, Square destination) {
-        return getPawnCoordinates(origin).contains(getCoordinates(destination));
+    private HashSet<Coordinates> getValidCoordinatesForMove(Square origin, boolean includeCastle) {
+        Piece piece = origin.getPiece();
+        if (piece == null) {
+            return new HashSet<Coordinates>();
+        }
+        switch (piece.getType()) {
+            case QUEEN:
+                return getQueenCoordinates(origin);
+            case BISHOP:
+                return getDiagonalCoordinates(origin);
+            case ROOK:
+                return getRowAndColumnCoordinates(origin);
+            case KNIGHT:
+                return getKnightCoordinates(origin);
+            case KING:
+                return getKingCoordinates(origin, includeCastle);
+            case PAWN:
+                return getPawnCoordinates(origin);
+            default:
+                return new HashSet<>();
+        }
     }
 
     private HashSet<Coordinates> getPawnCoordinates(Square origin) {
@@ -199,12 +291,32 @@ public class Board {
                 coords.add(rightDiagonalCoordinates);
             }
         }
+
+        // Can the pawn en passant?
+        Move lastMove = peekLastMove();
+        // Can only en passant if the last move was a pawn moving two spaces
+        if (lastMove != null &&
+                lastMove.getMovingPiece().getType() == Piece.Type.PAWN &&
+                Math.abs(lastMove.getEndCoordinates().row - lastMove.startCoordinates.row) == 2) {
+            if (lastMove.getEndCoordinates().col == startCoords.col - 1) {
+                coords.add(new Coordinates(
+                        (char) (startCoords.col - 1), startCoords.row + direction));
+            }
+            if (lastMove.getEndCoordinates().col == startCoords.col + 1) {
+                coords.add(new Coordinates(
+                        (char) (startCoords.col + 1), startCoords.row + direction));
+            }
+        }
+
         return coords;
     }
 
     private HashSet<Coordinates> getKnightCoordinates(Square origin) {
         Coordinates startCoords = getCoordinates(origin);
         HashSet<Coordinates> coordSet = new HashSet<Coordinates>();
+        if (origin.getPiece() == null) {
+            return coordSet;
+        }
         Coordinates[] newCoords = {
                 new Coordinates((char) (startCoords.col + 2), startCoords.row + 1),
                 new Coordinates((char) (startCoords.col + 2), startCoords.row - 1),
@@ -216,8 +328,12 @@ public class Board {
                 new Coordinates((char) (startCoords.col - 1), startCoords.row - 2),
         };
         for (Coordinates coords : newCoords) {
-            if (coords.col >= 'a' && coords.col < 'h' && coords.row >= 1 && coords.row <= 8) {
-                coordSet.add(coords);
+            if (coords.col >= 'a' && coords.col <= 'h'
+                    && coords.row >= 1 && coords.row <= 8) {
+                Piece attacked = getSquare(coords.col, coords.row).getPiece();
+                if (attacked == null || attacked.getColor() != origin.getPiece().getColor()) {
+                    coordSet.add(coords);
+                }
             }
         }
         return coordSet;
@@ -357,6 +473,118 @@ public class Board {
         return coordSet;
     }
 
+    private HashSet<Coordinates> getQueenCoordinates(Square origin) {
+        HashSet<Coordinates> result = getRowAndColumnCoordinates(origin);
+        result.addAll(getDiagonalCoordinates(origin));
+        return result;
+    }
+
+    private HashSet<Coordinates> getKingCoordinates(Square origin, boolean includeCastle) {
+        Coordinates startCoords = getCoordinates(origin);
+        HashSet<Coordinates> coordSet = new HashSet<Coordinates>();
+        if (origin.getPiece() == null) {
+            return coordSet;
+        }
+        Coordinates[] newCoords = {
+                new Coordinates((char) (startCoords.col + 1), startCoords.row + 1),
+                new Coordinates((char) (startCoords.col + 1), startCoords.row),
+                new Coordinates((char) (startCoords.col + 1), startCoords.row - 1),
+                new Coordinates((char) (startCoords.col), startCoords.row + 1),
+                new Coordinates((char) (startCoords.col), startCoords.row - 1),
+                new Coordinates((char) (startCoords.col - 1), startCoords.row + 1),
+                new Coordinates((char) (startCoords.col - 1), startCoords.row),
+                new Coordinates((char) (startCoords.col - 1), startCoords.row - 1),
+        };
+        for (Coordinates coords : newCoords) {
+            if (coords.col >= 'a' && coords.col <= 'h'
+                    && coords.row >= 1 && coords.row <= 8) {
+                Piece attacked = getSquare(coords.col, coords.row).getPiece();
+                if (attacked == null || attacked.getColor() != origin.getPiece().getColor()) {
+                    coordSet.add(coords);
+                }
+            }
+        }
+        // This if statement prevents infinite recursion when determining threatened pieces.
+        if (includeCastle) {
+            if (canCastleLeft(origin)) {
+                coordSet.add(new Coordinates((char) (startCoords.col - 2), startCoords.row));
+            }
+            if (canCastleRight(origin)) {
+                coordSet.add(new Coordinates((char) (startCoords.col + 2), startCoords.row));
+            }
+        }
+        return coordSet;
+    }
+
+    private boolean canCastleLeft(Square sq) {
+        if (sq.getPiece() == null || sq.getPiece().getType() != Piece.Type.KING) {
+            return false;
+        }
+        PlayerColor kingColor = sq.getPiece().getColor();
+        PlayerColor opponentColor =
+                kingColor == PlayerColor.WHITE ? PlayerColor.BLACK : PlayerColor.WHITE;
+        Square leftCornerSquare = getSquare('a', kingColor == PlayerColor.WHITE ? 1 : 8);
+        if (leftCornerSquare.getPiece() == null ||
+                leftCornerSquare.getPiece().getType() != Piece.Type.ROOK) {
+            return false;
+        }
+        boolean isThreatened = false;
+        for (char col = 'a'; col < 'f'; col++) {
+            if(isThreatenedByColor(getSquare(col, sq.getRow()), opponentColor)) {
+                isThreatened = true;
+                break;
+            }
+        }
+        return !sq.getPiece().hasMoved() &&
+                !leftCornerSquare.getPiece().hasMoved() &&
+                !isThreatened;
+
+    }
+
+    private boolean canCastleRight(Square sq) {
+        if (sq.getPiece() == null || sq.getPiece().getType() != Piece.Type.KING) {
+            return false;
+        }
+        PlayerColor kingColor = sq.getPiece().getColor();
+        PlayerColor opponentColor =
+                kingColor == PlayerColor.WHITE ? PlayerColor.BLACK : PlayerColor.WHITE;
+        Square rightCornerSquare = getSquare('h', kingColor == PlayerColor.WHITE ? 1 : 8);
+        if (rightCornerSquare.getPiece() == null ||
+                rightCornerSquare.getPiece().getType() != Piece.Type.ROOK) {
+            return false;
+        }
+        boolean isThreatened = false;
+        for (char col = 'e'; col < 'i'; col++) {
+            if(isThreatenedByColor(getSquare(col, sq.getRow()), opponentColor)) {
+                isThreatened = true;
+                break;
+            }
+        }
+        return !sq.getPiece().hasMoved() &&
+                !rightCornerSquare.getPiece().hasMoved() &&
+                !isThreatened;
+
+    }
+
+    private boolean isThreatenedByColor(Square sq, PlayerColor color) {
+        Coordinates targetCoords = getCoordinates(sq);
+        for (char col = 'a'; col < 'i'; col++) {
+            for (int row = 1; row < 9; row++) {
+                Square attackingSquare = getSquare(col, row);
+                Piece piece = attackingSquare.getPiece();
+                if (piece != null && piece.getColor() == color) {
+                    // Don't worry about the opponent's castle interfering with your castle.
+                    // If the opponent's king is close enough for this to matter, they can't castle.
+                    HashSet<Coordinates> threatenedCoords =
+                            getValidCoordinatesForMove(attackingSquare, false);
+                    if (threatenedCoords.contains(targetCoords)) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
 
     private boolean isValidMove(Square origin, Square destination) {
         Piece piece = origin.getPiece();
@@ -373,30 +601,7 @@ public class Board {
                 || destCoords.row < 1 || destCoords.row > 8) {
             return false;
         }
-        boolean isValidMove = false;
-        switch (piece.getType()) {
-            case QUEEN:
-                isValidMove = isValidMoveForQueen(origin, destination);
-                break;
-            case BISHOP:
-                isValidMove = isValidMoveForBishop(origin, destination);
-                break;
-            case ROOK:
-                isValidMove = isValidMoveForRook(origin, destination);
-                break;
-            case KNIGHT:
-                isValidMove = isValidMoveForKnight(origin, destination);
-                break;
-            case KING:
-                isValidMove = isValidMoveForKing(origin, destination);
-                break;
-            case PAWN:
-                isValidMove = isValidMoveForPawn(origin, destination);
-                break;
-            default:
-                isValidMove = true;
-                break;
-        }
+        boolean isValidMove = getValidCoordinatesForMove(origin, true).contains(destCoords);
 
         return isValidMove;
     }
@@ -414,10 +619,54 @@ public class Board {
             return false;  // Can't take your own piece.
         }
         if (isValidMove(origin, destination)) {
-            destination.setPiece(origin.getPiece());
+            Piece movingPiece = origin.getPiece();
+            // Handle castling before recording move.
+            boolean isCastle = false;
+            Square rookSquare = new Square('a', 1);
+            Square rookDestination = new Square('a', 1);
+            // Castle left
+            if (movingPiece.getType() == Piece.Type.KING &&
+                    destination.getCol() == origin.getCol() - 2) {
+                rookSquare = getSquare('a', origin.getRow());
+                rookDestination = getSquare('d', origin.getRow());
+                isCastle = true;
+            }
+            if (movingPiece.getType() == Piece.Type.KING &&
+                    destination.getCol() == origin.getCol() + 2) {
+                rookSquare = getSquare('h', origin.getRow());
+                rookDestination = getSquare('f', origin.getRow());
+                isCastle = true;
+            }
+
+            // Handle en passant before recording move.
+            // En passant occurs if the pawn is attacking diagonally to an empty space.
+            boolean isEnPassant = (origin.getPiece() != null &&
+                    origin.getPiece().getType() == Piece.Type.PAWN &&
+                    origin.getCol() != destination.getCol() &&
+                    destination.getPiece() == null);
+            recordMove(new Move(origin, destination, isCastle, isEnPassant));
+
+            movingPiece.setHasMoved(true);
+            destination.setPiece(movingPiece);
+            if (isCastle) {
+                Piece castlingRook = rookSquare.getPiece();
+                if (castlingRook == null || castlingRook.getType() != Piece.Type.ROOK) {
+                    // Something went horribly wrong.
+                    return false;
+                }
+                castlingRook.setHasMoved(true);
+                rookDestination.setPiece(castlingRook);
+                rookSquare.setPiece(null);
+            }
+            if (isEnPassant) {
+                // Delete the pawn that was attacked.
+                int startingRow = origin.getRow();
+                char endingCol = destination.getCol();
+                getSquare(endingCol, startingRow).setPiece(null);
+            }
+            origin.setPiece(null);
             this.setCurrentPlayer(
                     currentPlayer == PlayerColor.WHITE ? PlayerColor.BLACK : PlayerColor.WHITE);
-            origin.setPiece(null);
             return true;
         } else {
             return false;
