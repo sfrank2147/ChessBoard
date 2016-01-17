@@ -170,6 +170,9 @@ public class Board {
     }
 
     public Move popMove() {
+        if (moveStack.size() == 0) {
+            return null;
+        }
         return moveStack.pop();
     }
 
@@ -529,15 +532,22 @@ public class Board {
             return false;
         }
         boolean isThreatened = false;
+        boolean isOccupied = false;
         for (char col = 'a'; col < 'f'; col++) {
-            if(isThreatenedByColor(getSquare(col, sq.getRow()), opponentColor)) {
+            Square betweeenSquare = getSquare(col, sq.getRow());
+            if (betweeenSquare.getPiece() != null) {
+                isOccupied = true;
+                break;
+            }
+            if(isThreatenedByColor(betweeenSquare, opponentColor)) {
                 isThreatened = true;
                 break;
             }
         }
         return !sq.getPiece().hasMoved() &&
                 !leftCornerSquare.getPiece().hasMoved() &&
-                !isThreatened;
+                !isThreatened &&
+                !isOccupied;
 
     }
 
@@ -554,16 +564,59 @@ public class Board {
             return false;
         }
         boolean isThreatened = false;
+        boolean isOccupied = false;
         for (char col = 'e'; col < 'i'; col++) {
-            if(isThreatenedByColor(getSquare(col, sq.getRow()), opponentColor)) {
+            Square betweeenSquare = getSquare(col, sq.getRow());
+            if (betweeenSquare.getPiece() != null) {
+                isOccupied = true;
+                break;
+            }
+            if(isThreatenedByColor(betweeenSquare, opponentColor)) {
                 isThreatened = true;
                 break;
             }
         }
         return !sq.getPiece().hasMoved() &&
                 !rightCornerSquare.getPiece().hasMoved() &&
-                !isThreatened;
+                !isThreatened &&
+                !isOccupied;
 
+    }
+
+    private PlayerColor oppositeColor(PlayerColor color) {
+        return color == PlayerColor.BLACK ? PlayerColor.WHITE : PlayerColor.BLACK;
+    }
+
+    private void undoMove() {
+        Move move = popMove();
+        if (move == null) {
+            return;
+        }
+        Square startSquare = getSquare(move.startCoordinates.col, move.startCoordinates.row);
+        Square endSquare = getSquare(move.endCoordinates.col, move.endCoordinates.row);
+        startSquare.setPiece(move.getMovingPiece());
+        endSquare.setPiece(move.getTakenPiece());
+
+        // Special cases: en passant and castling.
+        if (move.isEnPassant()) {
+            Square takenSquare = getSquare(move.endCoordinates.col, move.startCoordinates.row);
+            PlayerColor takenColor =
+                    move.getMovingPiece().getColor() == PlayerColor.WHITE
+                            ? PlayerColor.BLACK : PlayerColor.WHITE;
+            Piece takenPawn = new Piece(takenColor, Piece.Type.PAWN);
+            takenPawn.setHasMoved(true);
+            takenSquare.setPiece(takenPawn);
+        }
+
+        if (move.isCastle()) {
+            char rookCol = move.endCoordinates.col < move.startCoordinates.col ? 'a' : 'h';
+            PlayerColor color = move.getMovingPiece().getColor();
+            int rookRow = color == PlayerColor.WHITE ? 1 : 8;
+            Piece rook = new Piece(color, Piece.Type.ROOK);
+            rook.setHasMoved(false);
+            getSquare(rookCol, rookRow).setPiece(rook);
+        }
+        setCurrentPlayer(oppositeColor(currentPlayer));
     }
 
     private boolean isThreatenedByColor(Square sq, PlayerColor color) {
@@ -610,6 +663,24 @@ public class Board {
         return this.squares[row - 1][col - 'a'];
     }
 
+    // Return true if color is in check.
+    private boolean isInCheck(PlayerColor color) {
+        // First, find the square with the king.
+        for (char col = 'a'; col < 'i'; col++) {
+            for (int row = 1; row < 9; row++) {
+                Square sq = getSquare(col, row);
+                if (sq.getPiece() != null &&
+                        sq.getPiece().getColor() == color &&
+                        sq.getPiece().getType() == Piece.Type.KING) {
+                    return isThreatenedByColor(sq,
+                            color == PlayerColor.WHITE ? PlayerColor.BLACK : PlayerColor.WHITE);
+                }
+            }
+        }
+        // We should have found the king by now.  Something is wrong.
+        return true;
+    }
+
     public boolean move(Square origin, Square destination) {
         if (origin.getPiece() == null || origin.getPiece().getColor() != this.getCurrentPlayer()) {
             return false;  // Have to move your own piece.
@@ -618,58 +689,62 @@ public class Board {
                 destination.getPiece().getColor() == this.getCurrentPlayer()) {
             return false;  // Can't take your own piece.
         }
-        if (isValidMove(origin, destination)) {
-            Piece movingPiece = origin.getPiece();
-            // Handle castling before recording move.
-            boolean isCastle = false;
-            Square rookSquare = new Square('a', 1);
-            Square rookDestination = new Square('a', 1);
-            // Castle left
-            if (movingPiece.getType() == Piece.Type.KING &&
-                    destination.getCol() == origin.getCol() - 2) {
-                rookSquare = getSquare('a', origin.getRow());
-                rookDestination = getSquare('d', origin.getRow());
-                isCastle = true;
-            }
-            if (movingPiece.getType() == Piece.Type.KING &&
-                    destination.getCol() == origin.getCol() + 2) {
-                rookSquare = getSquare('h', origin.getRow());
-                rookDestination = getSquare('f', origin.getRow());
-                isCastle = true;
-            }
-
-            // Handle en passant before recording move.
-            // En passant occurs if the pawn is attacking diagonally to an empty space.
-            boolean isEnPassant = (origin.getPiece() != null &&
-                    origin.getPiece().getType() == Piece.Type.PAWN &&
-                    origin.getCol() != destination.getCol() &&
-                    destination.getPiece() == null);
-            recordMove(new Move(origin, destination, isCastle, isEnPassant));
-
-            movingPiece.setHasMoved(true);
-            destination.setPiece(movingPiece);
-            if (isCastle) {
-                Piece castlingRook = rookSquare.getPiece();
-                if (castlingRook == null || castlingRook.getType() != Piece.Type.ROOK) {
-                    // Something went horribly wrong.
-                    return false;
-                }
-                castlingRook.setHasMoved(true);
-                rookDestination.setPiece(castlingRook);
-                rookSquare.setPiece(null);
-            }
-            if (isEnPassant) {
-                // Delete the pawn that was attacked.
-                int startingRow = origin.getRow();
-                char endingCol = destination.getCol();
-                getSquare(endingCol, startingRow).setPiece(null);
-            }
-            origin.setPiece(null);
-            this.setCurrentPlayer(
-                    currentPlayer == PlayerColor.WHITE ? PlayerColor.BLACK : PlayerColor.WHITE);
-            return true;
-        } else {
+        if (!isValidMove(origin, destination)) {
             return false;
         }
+        Piece movingPiece = origin.getPiece();
+        // Handle castling before recording move.
+        boolean isCastle = false;
+        Square rookSquare = new Square('a', 1);
+        Square rookDestination = new Square('a', 1);
+        // Castle left
+        if (movingPiece.getType() == Piece.Type.KING &&
+                destination.getCol() == origin.getCol() - 2) {
+            rookSquare = getSquare('a', origin.getRow());
+            rookDestination = getSquare('d', origin.getRow());
+            isCastle = true;
+        }
+        if (movingPiece.getType() == Piece.Type.KING &&
+                destination.getCol() == origin.getCol() + 2) {
+            rookSquare = getSquare('h', origin.getRow());
+            rookDestination = getSquare('f', origin.getRow());
+            isCastle = true;
+        }
+
+        // Handle en passant before recording move.
+        // En passant occurs if the pawn is attacking diagonally to an empty space.
+        boolean isEnPassant = (origin.getPiece() != null &&
+                origin.getPiece().getType() == Piece.Type.PAWN &&
+                origin.getCol() != destination.getCol() &&
+                destination.getPiece() == null);
+
+        recordMove(new Move(origin, destination, isCastle, isEnPassant));
+
+        movingPiece.setHasMoved(true);
+        destination.setPiece(movingPiece);
+        if (isCastle) {
+            Piece castlingRook = rookSquare.getPiece();
+            if (castlingRook == null || castlingRook.getType() != Piece.Type.ROOK) {
+                // Something went horribly wrong.
+                return false;
+            }
+            castlingRook.setHasMoved(true);
+            rookDestination.setPiece(castlingRook);
+            rookSquare.setPiece(null);
+        }
+        if (isEnPassant) {
+            // Delete the pawn that was attacked.
+            int startingRow = origin.getRow();
+            char endingCol = destination.getCol();
+            getSquare(endingCol, startingRow).setPiece(null);
+        }
+        origin.setPiece(null);
+        this.setCurrentPlayer(oppositeColor(currentPlayer));
+        // If the person who just moved is in check, undo the move and return false.
+        if (isInCheck(oppositeColor(currentPlayer))) {
+            undoMove();
+            return false;
+        }
+        return true;
     }
 }

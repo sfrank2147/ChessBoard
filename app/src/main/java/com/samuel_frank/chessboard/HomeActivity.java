@@ -204,9 +204,9 @@ public class HomeActivity extends Activity {
                             ? Color.parseColor("#F5DEB3")
                             : Color.parseColor("#8B4513")
             );
-            if (this.board.move(previousSelectedSquare.getSquare(), squareUIElement.getSquare())) {
-                setUIFromBoard(this.board);
-            }
+            this.board.move(previousSelectedSquare.getSquare(), squareUIElement.getSquare());
+            setUIFromBoard(this.board);
+
             setSelectedSquare(null);
         }
     }
