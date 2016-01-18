@@ -681,6 +681,40 @@ public class Board {
         return true;
     }
 
+    // This function checks if a pawn should be promoted.
+    // There will never be more than one promotable pawn at a time.
+    public boolean isPromotablePawn() {
+        for (char col = 'a'; col < 'i'; col++) {
+            // Only check rows 1 and 8.
+            // Don't need to verify color because pawns can't move backwards.
+            Piece rowOnePiece = getSquare(col, 1).getPiece();
+            if (rowOnePiece != null && rowOnePiece.getType() == Piece.Type.PAWN) {
+                return true;
+            }
+            Piece rowEightPiece = getSquare(col, 8).getPiece();
+            if (rowEightPiece != null && rowEightPiece.getType() == Piece.Type.PAWN) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // This function relies on the assumption that there is only one promotable pawn at a time.
+    public void promotePawn(Piece.Type type) {
+        for (char col = 'a'; col < 'i'; col++) {
+            Piece rowOnePiece = getSquare(col, 1).getPiece();
+            if (rowOnePiece != null && rowOnePiece.getType() == Piece.Type.PAWN) {
+                rowOnePiece.setType(type);
+                return;
+            }
+            Piece rowEightPiece = getSquare(col, 8).getPiece();
+            if (rowEightPiece != null && rowEightPiece.getType() == Piece.Type.PAWN) {
+                rowEightPiece.setType(type);
+                return;
+            }
+        }
+    }
+
     public boolean move(Square origin, Square destination) {
         if (origin.getPiece() == null || origin.getPiece().getColor() != this.getCurrentPlayer()) {
             return false;  // Have to move your own piece.

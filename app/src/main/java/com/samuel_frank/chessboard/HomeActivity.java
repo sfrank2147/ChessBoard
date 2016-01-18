@@ -1,14 +1,20 @@
 package com.samuel_frank.chessboard;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.LinearLayout;
 
 public class HomeActivity extends Activity {
+
+    private static final String TAG = "HomeActivity";
+
+    public static final int PROMOTION_REQUEST = 1;
 
     private Board board;
 
@@ -205,9 +211,40 @@ public class HomeActivity extends Activity {
                             : Color.parseColor("#8B4513")
             );
             this.board.move(previousSelectedSquare.getSquare(), squareUIElement.getSquare());
-            setUIFromBoard(this.board);
-
+            if (this.board.isPromotablePawn()) {
+                startActivityForResult(
+                        new Intent(this, SelectPromotionPieceActivity.class),
+                        PROMOTION_REQUEST);
+            } else {
+                // If the pawn is promoted, set the UI after the piece is chosen.
+                setUIFromBoard(this.board);
+            }
             setSelectedSquare(null);
+        }
+    }
+
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == PROMOTION_REQUEST) {
+            if (resultCode == RESULT_OK) {
+                String chosenPiece = data.getExtras().getString("selectedPiece");
+                switch (chosenPiece) {
+                    case "Queen":
+                        board.promotePawn(Piece.Type.QUEEN);
+                        break;
+                    case "Rook":
+                        board.promotePawn(Piece.Type.ROOK);
+                        break;
+                    case "Bishop":
+                        board.promotePawn(Piece.Type.BISHOP);
+                        break;
+                    case "Knight":
+                        board.promotePawn(Piece.Type.KNIGHT);
+                        break;
+                    default:
+                        break;
+                }
+            }
+            setUIFromBoard(getBoard());
         }
     }
 }
