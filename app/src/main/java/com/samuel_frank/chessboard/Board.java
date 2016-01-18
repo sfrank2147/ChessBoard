@@ -715,6 +715,37 @@ public class Board {
         }
     }
 
+    public boolean isCheckmate() {
+        // Returns true if the current player is in checkmate.
+        // Currently uses a super-dumb algorithm:
+        // first, check if player is in check.
+        // Then, check every possible move the player can make.
+        // If all of them still put the player in check, it's checkmate.
+        if (!isInCheck(getCurrentPlayer())) {
+            return false;
+        }
+        // Iterate over all of the player's pieces.
+        // If any move puts the player out of check, return false.
+        HashSet<Square> squares = new HashSet<>();
+        for (Square[] row : this.squares) {
+            for (Square sq : row) {
+                if (sq.getPiece() == null || sq.getPiece().getColor() != currentPlayer) {
+                    continue;
+                }
+                // Don't need to worry about castle, since player can't castle out of check.
+                HashSet<Coordinates> coords = getValidCoordinatesForMove(sq, false);
+                for (Coordinates coord : coords) {
+                    if (move(sq, getSquare(coord.col, coord.row))) {
+                        // There's a valid move, b/c move returns false if it would move into check.
+                        undoMove();
+                        return false;
+                    }
+                }
+            }
+        }
+        return true;
+    }
+
     public boolean move(Square origin, Square destination) {
         if (origin.getPiece() == null || origin.getPiece().getColor() != this.getCurrentPlayer()) {
             return false;  // Have to move your own piece.

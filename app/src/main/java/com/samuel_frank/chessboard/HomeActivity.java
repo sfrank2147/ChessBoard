@@ -1,6 +1,7 @@
 package com.samuel_frank.chessboard;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
@@ -9,6 +10,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.LinearLayout;
+import android.widget.Toast;
 
 public class HomeActivity extends Activity {
 
@@ -216,11 +218,25 @@ public class HomeActivity extends Activity {
                         new Intent(this, SelectPromotionPieceActivity.class),
                         PROMOTION_REQUEST);
             } else {
-                // If the pawn is promoted, set the UI after the piece is chosen.
+                // If the pawn is promoted, set the UI and check for checkmate
+                // after the piece is chosen.
                 setUIFromBoard(this.board);
+                checkForCheckmate();
             }
             setSelectedSquare(null);
         }
+    }
+
+    public void checkForCheckmate() {
+        if (board.isCheckmate()) {
+            Context context = getApplicationContext();
+            CharSequence text = "Checkmate!";
+            int duration = Toast.LENGTH_LONG;
+
+            Toast toast = Toast.makeText(context, text, duration);
+            toast.show();
+        }
+        return;
     }
 
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -245,6 +261,7 @@ public class HomeActivity extends Activity {
                 }
             }
             setUIFromBoard(getBoard());
+            checkForCheckmate();
         }
     }
 }
