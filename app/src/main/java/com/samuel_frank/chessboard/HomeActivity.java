@@ -194,6 +194,22 @@ public class HomeActivity extends Activity {
         return super.onOptionsItemSelected(item);
     }
 
+    public void removeSelectedSquare() {
+        removeSelectedSquareHighlight();
+        setSelectedSquare(null);
+    }
+
+    public void removeSelectedSquareHighlight() {
+        SquareUIElement sq = getSelectedSquare();
+        if (sq != null) {
+            sq.setBackgroundColor(
+                    isWhiteSquare(sq)
+                            ? Color.parseColor("#F5DEB3")
+                            : Color.parseColor("#8B4513")
+            );
+        }
+    }
+
     public void squareClicked(View view) {
         SquareUIElement squareUIElement = (SquareUIElement) view;
         SquareUIElement previousSelectedSquare = getSelectedSquare();
@@ -207,11 +223,6 @@ public class HomeActivity extends Activity {
                 setSelectedSquare(squareUIElement);
             }
         } else {
-            previousSelectedSquare.setBackgroundColor(
-                    isWhiteSquare(previousSelectedSquare)
-                            ? Color.parseColor("#F5DEB3")
-                            : Color.parseColor("#8B4513")
-            );
             this.board.move(previousSelectedSquare.getSquare(), squareUIElement.getSquare());
             if (this.board.isPromotablePawn()) {
                 startActivityForResult(
@@ -223,7 +234,7 @@ public class HomeActivity extends Activity {
                 setUIFromBoard(this.board);
                 checkForCheckmate();
             }
-            setSelectedSquare(null);
+            removeSelectedSquare();
         }
     }
 
@@ -237,6 +248,27 @@ public class HomeActivity extends Activity {
             toast.show();
         }
         return;
+    }
+
+    public void resetBoard() {
+        Log.d(TAG, "Resetting board.");
+        this.board.reset();
+        removeSelectedSquare();
+        setUIFromBoard(this.board);
+    }
+
+    public void resetBoard(View view) {
+        this.resetBoard();
+    }
+
+    public void undoMove() {
+        this.board.undoMove();
+        removeSelectedSquare();
+        setUIFromBoard(this.board);
+    }
+
+    public void undoMove(View view) {
+        this.undoMove();
     }
 
     public void onActivityResult(int requestCode, int resultCode, Intent data) {

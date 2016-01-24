@@ -2,7 +2,8 @@
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:orientation="vertical">
 
     <com.samuel_frank.chessboard.BoardLayout
         android:orientation="vertical"
@@ -17,4 +18,24 @@
         <include layout="@layout/board_row" android:id="@+id/row2"/>
         <include layout="@layout/board_row" android:id="@+id/row1"/>
     </com.samuel_frank.chessboard.BoardLayout>
+    <LinearLayout
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+        <Button
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:id="@+id/undoMove"
+            android:text="Undo Move"
+            android:onClick="undoMove"
+            android:layout_weight="0.5"/>
+        <Button
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:id="@+id/newGame"
+            android:text="New Game"
+            android:onClick="resetBoard"
+            android:layout_weight="0.5"/>
+    </LinearLayout>
 </LinearLayout>

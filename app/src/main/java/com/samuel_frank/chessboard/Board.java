@@ -1,10 +1,6 @@
 package com.samuel_frank.chessboard;
 
-import android.content.Context;
-
-import java.util.Arrays;
 import java.util.HashSet;
-import java.util.Set;
 import java.util.Stack;
 
 /**
@@ -119,7 +115,16 @@ public class Board {
     }
 
     public Board() {
-        initializeSquares();
+        // Initialize the squares.
+        this.squares = new Square[8][8];
+        for (char col = 'a'; col < 'i'; col++) {
+            for (int row = 1; row < 9; row++) {
+                Square curSquare = new Square(col, row);
+                curSquare.setBoard(this);
+                this.squares[row - 1][col - 'a'] = curSquare;
+            }
+        }
+        setPiecesForEmptyBoard();
         this.currentPlayer = PlayerColor.WHITE;
         this.moveStack = new Stack<>();
     }
@@ -176,15 +181,7 @@ public class Board {
         return moveStack.pop();
     }
 
-    private void initializeSquares() {
-        this.squares = new Square[8][8];
-        for (char col = 'a'; col < 'i'; col++) {
-            for (int row = 1; row < 9; row++) {
-                Square curSquare = new Square(col, row);
-                curSquare.setBoard(this);
-                this.squares[row - 1][col - 'a'] = curSquare;
-            }
-        }
+    private void setPiecesForEmptyBoard() {
         getSquare('a', 1).setPiece(new Piece(PlayerColor.WHITE, Piece.Type.ROOK));
         getSquare('b', 1).setPiece(new Piece(PlayerColor.WHITE, Piece.Type.KNIGHT));
         getSquare('c', 1).setPiece(new Piece(PlayerColor.WHITE, Piece.Type.BISHOP));
@@ -220,6 +217,13 @@ public class Board {
         getSquare('f', 7).setPiece(new Piece(PlayerColor.BLACK, Piece.Type.PAWN));
         getSquare('g', 7).setPiece(new Piece(PlayerColor.BLACK, Piece.Type.PAWN));
         getSquare('h', 7).setPiece(new Piece(PlayerColor.BLACK, Piece.Type.PAWN));
+
+        // All other squares should be empty.
+        for (char col = 'a'; col < 'i'; col++) {
+            for (int row = 3; row < 7; row++) {
+                getSquare(col, row).setPiece(null);
+            }
+        }
 
     }
 
@@ -587,7 +591,7 @@ public class Board {
         return color == PlayerColor.BLACK ? PlayerColor.WHITE : PlayerColor.BLACK;
     }
 
-    private void undoMove() {
+    public void undoMove() {
         Move move = popMove();
         if (move == null) {
             return;
@@ -811,5 +815,11 @@ public class Board {
             return false;
         }
         return true;
+    }
+
+    public void reset() {
+        this.setPiecesForEmptyBoard();
+        this.setCurrentPlayer(PlayerColor.WHITE);
+        moveStack.clear();
     }
 }
