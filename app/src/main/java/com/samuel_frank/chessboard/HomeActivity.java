@@ -102,36 +102,72 @@ public class HomeActivity extends Activity {
     }
 
     private int getImageResource(PlayerColor color, Piece.Type type) {
-        if (color == PlayerColor.BLACK) {
-            switch(type) {
-                case ROOK:
-                    return R.drawable.black_rook;
-                case KNIGHT:
-                    return R.drawable.black_knight;
-                case BISHOP:
-                    return R.drawable.black_bishop;
-                case KING:
-                    return R.drawable.black_king;
-                case QUEEN:
-                    return R.drawable.black_queen;
-                case PAWN:
-                    return R.drawable.black_pawn;
-            }
+        if (this.board.getCurrentPlayer() == PlayerColor.WHITE) {
+            if (color == PlayerColor.BLACK) {
+                switch (type) {
+                    case ROOK:
+                        return R.drawable.black_rook;
+                    case KNIGHT:
+                        return R.drawable.black_knight;
+                    case BISHOP:
+                        return R.drawable.black_bishop;
+                    case KING:
+                        return R.drawable.black_king;
+                    case QUEEN:
+                        return R.drawable.black_queen;
+                    case PAWN:
+                        return R.drawable.black_pawn;
+                }
 
+            } else {
+                switch (type) {
+                    case ROOK:
+                        return R.drawable.white_rook;
+                    case KNIGHT:
+                        return R.drawable.white_knight;
+                    case BISHOP:
+                        return R.drawable.white_bishop;
+                    case KING:
+                        return R.drawable.white_king;
+                    case QUEEN:
+                        return R.drawable.white_queen;
+                    case PAWN:
+                        return R.drawable.white_pawn;
+                }
+            }
         } else {
-            switch(type) {
-                case ROOK:
-                    return R.drawable.white_rook;
-                case KNIGHT:
-                    return R.drawable.white_knight;
-                case BISHOP:
-                    return R.drawable.white_bishop;
-                case KING:
-                    return R.drawable.white_king;
-                case QUEEN:
-                    return R.drawable.white_queen;
-                case PAWN:
-                    return R.drawable.white_pawn;
+            // When the black player is moving, all the pieces should be turned upside down.
+            if (color == PlayerColor.BLACK) {
+                switch (type) {
+                    case ROOK:
+                        return R.drawable.black_rook_upside_down;
+                    case KNIGHT:
+                        return R.drawable.black_knight_upside_down;
+                    case BISHOP:
+                        return R.drawable.black_bishop_upside_down;
+                    case KING:
+                        return R.drawable.black_king_upside_down;
+                    case QUEEN:
+                        return R.drawable.black_queen_upside_down;
+                    case PAWN:
+                        return R.drawable.black_pawn_upside_down;
+                }
+
+            } else {
+                switch (type) {
+                    case ROOK:
+                        return R.drawable.white_rook_upside_down;
+                    case KNIGHT:
+                        return R.drawable.white_knight_upside_down;
+                    case BISHOP:
+                        return R.drawable.white_bishop_upside_down;
+                    case KING:
+                        return R.drawable.white_king_upside_down;
+                    case QUEEN:
+                        return R.drawable.white_queen_upside_down;
+                    case PAWN:
+                        return R.drawable.white_pawn_upside_down;
+                }
             }
         }
         // Should never reach here.
