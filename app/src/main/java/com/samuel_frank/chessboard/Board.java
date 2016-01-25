@@ -537,7 +537,7 @@ public class Board {
         }
         boolean isThreatened = false;
         boolean isOccupied = false;
-        for (char col = 'a'; col < 'f'; col++) {
+        for (char col = 'b'; col < 'e'; col++) {
             Square betweeenSquare = getSquare(col, sq.getRow());
             if (betweeenSquare.getPiece() != null) {
                 isOccupied = true;
@@ -569,7 +569,7 @@ public class Board {
         }
         boolean isThreatened = false;
         boolean isOccupied = false;
-        for (char col = 'e'; col < 'i'; col++) {
+        for (char col = 'f'; col < 'h'; col++) {
             Square betweeenSquare = getSquare(col, sq.getRow());
             if (betweeenSquare.getPiece() != null) {
                 isOccupied = true;
